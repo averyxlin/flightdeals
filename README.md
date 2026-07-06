@@ -1,22 +1,38 @@
 # flightdeals
 
-Scrape Google Flights for the cheapest **non-stop, carry-on** fares and (eventually) email when a
-deal drops under a target price. Built one phase at a time as a web-scraping learning exercise.
+A personal flight-deal watcher. You tell it a route, your travel dates (fixed or a flexible range),
+and a max price — it checks Google Flights on a schedule and emails you when a **non-stop,
+carry-on** fare drops under your target. No always-on server: it runs free as a GitHub Actions cron
+job. This is also a hands-on web-scraping learning project, built one phase at a time.
 
-> Scraping Google Flights is against Google's ToS — keep this personal-use and low-volume.
+> DISCLAIMER: Scraping Google Flights is against Google's ToS. I'm using this for personal use only.
 
-## Phase 1 — scraper core (done)
+## How it works
 
-Playwright drives a real Chromium through Google Flights (fill the form, click the Stops/Bags
-filters, read the results), returning the cheapest nonstop carry-on itinerary for a date pair.
+Rather than hitting a flights API, we drive a real browser. Playwright launches Chromium and walks
+through Google Flights like a person would: fill in the origin, destination, and dates, click the
+Stops and Bags filters, then read the results off the page. It returns the cheapest non-stop,
+carry-on itinerary for the date pair you asked for.
+
+(Google Flights randomizes its CSS class names and swaps UI elements on interaction, so the scraper
+targets stable roles and aria-labels instead of brittle selectors.)
+
+## Usage
 
 ```bash
-uv sync
-uv run playwright install chromium
-uv run python -m flightdeals.scraper.scraper \
+uv sync                              # install dependencies
+uv run playwright install chromium   # one-time: fetch the browser
+
+uv run flightdeals \
     --from SFO --to YYZ --depart 2026-09-01 --return 2026-09-12 [--headed] [--debug]
 ```
 
-`--headed` shows the browser; `--debug` dumps a screenshot + HTML on failure.
+- `--from` / `--to` — airport codes
+- `--depart` / `--return` — dates (`YYYY-MM-DD`)
+- `--headed` — show the browser window instead of running headless
+- `--debug` — dump a screenshot + HTML on failure
 
-Later phases: date-range search, SQLite + CLI, email/dedup + scheduled runs.
+## Roadmap
+
+The scraper core above is the first piece. Still to come: flexible date-range search, SQLite +
+CLI to manage watched routes, and email alerts with dedup on a scheduled GitHub Actions cron.
